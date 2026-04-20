@@ -1,0 +1,11 @@
+start: "2024-01-01"
+end: "2026-04-01"
+tickers: "AAPL,MSFT,NVDA"
+timeout_seconds: 1200
+runs:
+  - name: tradingagents
+    cwd: external/TradingAgents
+    command: "python3 test.py"
+  - name: daily_stock_analysis
+    cwd: external/daily_stock_analysis
+    command: "python3 test_env.py --fetch"

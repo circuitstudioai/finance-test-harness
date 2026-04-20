@@ -1,10 +1,15 @@
 symbols:
-  - SPY
-  - QQQ
   - AMD
   - SOFI
   - HIMS
   - RLAY
+  - HOOD
+  - LMND
+  - OSCR
+  - WELL
+  - ZETA
+  - SPY
+  - QQQ
 start: "2024-01-01"
 end: null
 initial_capital: 100000
