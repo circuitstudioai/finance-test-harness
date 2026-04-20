@@ -3,6 +3,16 @@ from __future__ import annotations
 import pandas as pd
 import numpy as np
 
+from .adapters import load_signal_csv, weights_from_signals
+
+
+SIGNAL_CONTEXT: dict = {}
+
+
+def set_signal_context(ctx: dict | None) -> None:
+    global SIGNAL_CONTEXT
+    SIGNAL_CONTEXT = ctx or {}
+
 
 def buy_hold(prices: pd.DataFrame) -> pd.DataFrame:
     w = pd.DataFrame(1.0 / prices.shape[1], index=prices.index, columns=prices.columns)
@@ -30,18 +40,34 @@ def mean_reversion_5(prices: pd.DataFrame) -> pd.DataFrame:
 # Placeholder adapters to wire external repo outputs
 
 def tradingagents_proxy(prices: pd.DataFrame) -> pd.DataFrame:
-    # TODO: replace with real adapter reading TradingAgents signals
+    # Legacy proxy baseline
     return momentum_20_100(prices)
 
 
 def ai_hedge_fund_proxy(prices: pd.DataFrame) -> pd.DataFrame:
-    # TODO: replace with real adapter reading ai-hedge-fund signals
+    # Legacy proxy baseline
     return buy_hold(prices)
 
 
 def daily_stock_analysis_proxy(prices: pd.DataFrame) -> pd.DataFrame:
-    # TODO: replace with real adapter reading daily_stock_analysis outputs
+    # Legacy proxy baseline
     return mean_reversion_5(prices)
+
+
+def tradingagents_true(prices: pd.DataFrame) -> pd.DataFrame:
+    path = SIGNAL_CONTEXT.get("tradingagents_csv")
+    if not path:
+        return pd.DataFrame(0.0, index=prices.index, columns=prices.columns)
+    signals = load_signal_csv(path)
+    return weights_from_signals(prices, signals)
+
+
+def daily_stock_analysis_true(prices: pd.DataFrame) -> pd.DataFrame:
+    path = SIGNAL_CONTEXT.get("daily_stock_analysis_csv")
+    if not path:
+        return pd.DataFrame(0.0, index=prices.index, columns=prices.columns)
+    signals = load_signal_csv(path)
+    return weights_from_signals(prices, signals)
 
 
 REGISTRY = {
@@ -51,4 +77,6 @@ REGISTRY = {
     "tradingagents_proxy": tradingagents_proxy,
     "ai_hedge_fund_proxy": ai_hedge_fund_proxy,
     "daily_stock_analysis_proxy": daily_stock_analysis_proxy,
+    "tradingagents_true": tradingagents_true,
+    "daily_stock_analysis_true": daily_stock_analysis_true,
 }

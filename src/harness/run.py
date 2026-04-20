@@ -6,7 +6,7 @@ import yaml
 import pandas as pd
 
 from .data import load_prices
-from .strategies import REGISTRY
+from .strategies import REGISTRY, set_signal_context
 from .backtest import run_backtest, metrics
 
 
@@ -16,6 +16,7 @@ def main() -> None:
     args = ap.parse_args()
 
     cfg = yaml.safe_load(Path(args.config).read_text())
+    set_signal_context(cfg.get("signal_context") or {})
     prices = load_prices(cfg["symbols"], cfg.get("start"), cfg.get("end"))
 
     results = []

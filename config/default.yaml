@@ -13,10 +13,14 @@ symbols:
 start: "2024-01-01"
 end: null
 initial_capital: 100000
+signal_context:
+  tradingagents_csv: "results/signals/tradingagents_signals.csv"
+  daily_stock_analysis_csv: "results/signals/daily_stock_analysis_signals.csv"
 strategies:
   - buy_hold
   - momentum_20_100
   - mean_reversion_5
   - tradingagents_proxy
-  - ai_hedge_fund_proxy
   - daily_stock_analysis_proxy
+  - tradingagents_true
+  - daily_stock_analysis_true

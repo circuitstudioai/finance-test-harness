@@ -34,8 +34,54 @@ python -m src.harness.run --config config/default.yaml
 ## Output
 - `results/latest_metrics.csv`
 - `results/latest_equity.csv`
+- `results/external_bench_latest.csv`
 
-## Next wiring steps
-1. Clone and run forked repos in separate folders.
-2. Write adapters that read each repo's output signal format.
-3. Replace proxy adapters with live adapters and rerun.
+## True signal adapters (implemented)
+The harness now supports **real signal CSV adapters**:
+- `tradingagents_true`
+- `daily_stock_analysis_true`
+
+Signal files expected:
+- `results/signals/tradingagents_signals.csv`
+- `results/signals/daily_stock_analysis_signals.csv`
+
+CSV schema:
+```csv
+date,symbol,decision
+2026-04-15,AMD,buy
+2026-04-15,SOFI,hold
+2026-04-15,HIMS,sell
+```
+Allowed decisions: `buy|hold|sell` (case-insensitive variants accepted).
+
+### Build signal CSVs from external outputs
+TradingAgents report extractor:
+```bash
+python -m src.harness.signal_extractors tradingagents \
+  --reports-root external/TradingAgents \
+  --out results/signals/tradingagents_signals.csv
+```
+
+Daily-stock-analysis JSON extractor:
+```bash
+python -m src.harness.signal_extractors daily \
+  --json-root external/daily_stock_analysis \
+  --out results/signals/daily_stock_analysis_signals.csv
+```
+
+Then run:
+```bash
+python -m src.harness.run --config config/default.yaml
+```
+
+## Metric definitions (plain English)
+- **Total return**: overall gain/loss over test period.
+- **CAGR** (Compound Annual Growth Rate): annualized growth rate if growth were smooth. Good for comparing different periods.
+- **Sharpe**: return per unit of volatility (higher is generally better).
+- **Max drawdown**: worst peak-to-trough drop. This is your pain metric.
+- **Win rate**: % of days with positive return (not the same as profitability by itself).
+
+## Notes on current results
+- Proxy strategies are baseline placeholders.
+- True adapters only become meaningful once signal CSVs contain real model decisions across many dates.
+- If a true adapter has no signals, it stays in cash for those dates.
