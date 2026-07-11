@@ -3,20 +3,25 @@
 Lightweight test harness to evaluate trading ideas before risking capital.
 
 ## What it does
-- Pulls daily OHLC data from Stooq (no API key required)
-- Runs strategy adapters (baseline + placeholder adapters for AI repos)
+- Pulls daily OHLC data from Yahoo Finance (no API key required)
+- Runs strategy adapters (baseline, true CSV adapters, and a no-key PEAD strategy)
 - Produces comparable metrics:
   - CAGR
   - Sharpe (daily, rf=0)
   - Max Drawdown
   - Win rate
   - Total return
+- Produces a signal event-study report for rich signal strategies:
+  - 1/5/20 trading-day signed forward returns
+  - SPY-adjusted forward returns when SPY is in the universe
+  - Hit rate by window
 - Writes outputs to `results/`.
 
 ## Included strategies
 - `buy_hold` (benchmark)
 - `momentum_20_100` (simple trend)
 - `mean_reversion_5` (simple reversal)
+- `pead_yahoo` (real no-key post-earnings drift strategy using Yahoo EPS surprises)
 - `tradingagents_proxy` (placeholder adapter)
 - `ai_hedge_fund_proxy` (placeholder adapter)
 - `daily_stock_analysis_proxy` (placeholder adapter)
@@ -34,7 +39,35 @@ python -m src.harness.run --config config/default.yaml
 ## Output
 - `results/latest_metrics.csv`
 - `results/latest_equity.csv`
+- `results/signals/pead_yahoo_signals.csv`
+- `results/latest_signal_events.csv`
+- `results/latest_signal_event_summary.csv`
 - `results/external_bench_latest.csv`
+
+## PEAD strategy
+`pead_yahoo` is inspired by the ai-hedge-fund v2 alpha-model pattern:
+an analyst model emits a directional view, and the harness converts that view
+into deterministic portfolio weights.
+
+The public default uses Yahoo earnings data, so it works without paid keys.
+For each stock:
+- read recent EPS estimate, reported EPS, and surprise percentage
+- ignore future/unreported rows
+- buy positive surprises and sell negative surprises above the configured threshold
+- hold for a fixed number of trading days
+- write an auditable rich-signal CSV with conviction, confidence, reasoning, and metadata
+
+Config knobs live under `signal_context` in `config/default.yaml`:
+```yaml
+pead_yahoo_csv: "results/signals/pead_yahoo_signals.csv"
+pead_holding_days: 5
+pead_min_abs_surprise_pct: 2.0
+pead_earnings_limit: 24
+pead_exclude_symbols: ["SPY", "QQQ"]
+```
+
+This is decision-support research infrastructure, not financial advice and not
+an auto-trading system.
 
 ## True signal adapters (implemented)
 The harness now supports **real signal CSV adapters**:
@@ -85,3 +118,4 @@ python -m src.harness.run --config config/default.yaml
 - Proxy strategies are baseline placeholders.
 - True adapters only become meaningful once signal CSVs contain real model decisions across many dates.
 - If a true adapter has no signals, it stays in cash for those dates.
+- `pead_yahoo` is real but intentionally modest: Yahoo data is convenient, not a professional point-in-time fundamentals feed. A paid Financial Datasets adapter can be added later behind the same signal contract.
