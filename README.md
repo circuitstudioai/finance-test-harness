@@ -44,6 +44,18 @@ python -m src.harness.run --config config/default.yaml
 - `results/latest_signal_event_summary.csv`
 - `results/external_bench_latest.csv`
 
+## Circuit Analyst evidence export
+Circuit Analyst can display harness-backed evidence badges from the PEAD event
+study. After running the harness, export the app fixture with:
+```bash
+python -m src.harness.export_app_evidence \
+  --output ../circuit-analyst-mvp/web/public/research/pead_yahoo_evidence.json
+```
+
+The export contains the 1/5/20-day event-study summary plus the latest PEAD
+event by symbol. It is safe for the public demo because it contains derived
+research output, not provider keys.
+
 ## PEAD strategy
 `pead_yahoo` is inspired by the ai-hedge-fund v2 alpha-model pattern:
 an analyst model emits a directional view, and the harness converts that view
