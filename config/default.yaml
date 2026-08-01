@@ -16,10 +16,16 @@ initial_capital: 100000
 signal_context:
   tradingagents_csv: "results/signals/tradingagents_signals.csv"
   daily_stock_analysis_csv: "results/signals/daily_stock_analysis_signals.csv"
+  pead_yahoo_csv: "results/signals/pead_yahoo_signals.csv"
+  pead_holding_days: 5
+  pead_min_abs_surprise_pct: 2.0
+  pead_earnings_limit: 24
+  pead_exclude_symbols: ["SPY", "QQQ"]
 strategies:
   - buy_hold
   - momentum_20_100
   - mean_reversion_5
+  - pead_yahoo
   - tradingagents_proxy
   - daily_stock_analysis_proxy
   - tradingagents_true

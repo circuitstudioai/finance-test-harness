@@ -8,6 +8,7 @@ import pandas as pd
 from .data import load_prices
 from .strategies import REGISTRY, set_signal_context
 from .backtest import run_backtest, metrics
+from .event_study import build_signal_event_report
 
 
 def main() -> None:
@@ -40,10 +41,21 @@ def main() -> None:
     equity_df = pd.DataFrame(equity_cols)
     equity_df.to_csv(outdir / "latest_equity.csv")
 
+    pead_path = (cfg.get("signal_context") or {}).get(
+        "pead_yahoo_csv", "results/signals/pead_yahoo_signals.csv"
+    )
+    event_detail, event_summary = build_signal_event_report(prices, pead_path, outdir=outdir)
+
     print("\n=== Metrics ===")
     print(metrics_df.round(4))
+    if not event_summary.empty:
+        print("\n=== Signal Event Study ===")
+        print(event_summary.round(4))
     print(f"\nSaved: {outdir / 'latest_metrics.csv'}")
     print(f"Saved: {outdir / 'latest_equity.csv'}")
+    if not event_detail.empty:
+        print(f"Saved: {outdir / 'latest_signal_events.csv'}")
+        print(f"Saved: {outdir / 'latest_signal_event_summary.csv'}")
 
 
 if __name__ == "__main__":
