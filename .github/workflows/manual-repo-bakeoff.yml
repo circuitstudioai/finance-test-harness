@@ -1,0 +1,70 @@
+name: Manual finance repository bake-off
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: tradingagents
+            repository: circuitstudioai/TradingAgents
+            ref: fa4d01c
+            install: python -m pip install -e candidate
+          - name: ai-hedge-fund
+            repository: circuitstudioai/ai-hedge-fund
+            ref: 0f6ac48
+            install: python -m pip install -e candidate
+          - name: daily-stock-analysis
+            repository: circuitstudioai/daily_stock_analysis
+            ref: efd2bce
+            install: python -m pip install -r candidate/requirements.txt
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Check out pinned candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.ref }}
+          path: candidate
+
+      - name: Install candidate
+        run: ${{ matrix.install }}
+
+      - name: Run one-case manual bake-off
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          LITELLM_MODEL: gemini/gemini-3-flash-preview
+          AGENT_LITELLM_MODEL: gemini/gemini-3-flash-preview
+          REPORT_LANGUAGE: en
+          AGENT_MODE: "true"
+          AGENT_ARCH: single
+          AGENT_MAX_STEPS: "5"
+          ENABLE_WEB_SEARCH: "false"
+          MARKET_REVIEW_ENABLED: "false"
+        run: python scripts/bakeoff/run_candidate.py "${{ matrix.name }}" candidate "artifacts/${{ matrix.name }}.json"
+
+      - name: Upload candidate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bakeoff-${{ matrix.name }}
+          path: artifacts/${{ matrix.name }}.json
+          if-no-files-found: error
+          retention-days: 14
