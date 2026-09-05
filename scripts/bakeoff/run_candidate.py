@@ -17,6 +17,8 @@ QUESTION = (
     "cases, identify the strongest risks, and state measurable thesis-invalidation conditions."
 )
 
+MODEL = "gemini-3.5-flash"
+
 
 def json_safe(value: Any) -> Any:
     try:
@@ -39,12 +41,14 @@ def run_tradingagents(root: Path) -> dict[str, Any]:
     config.update(
         {
             "llm_provider": "google",
-            "quick_think_llm": "gemini-3-flash-preview",
-            "deep_think_llm": "gemini-3-flash-preview",
+            "quick_think_llm": MODEL,
+            "deep_think_llm": MODEL,
             "google_thinking_level": "low",
             "max_debate_rounds": 1,
             "max_risk_discuss_rounds": 1,
             "max_recur_limit": 40,
+            "max_tokens": 2048,
+            "llm_max_retries": 0,
             "results_dir": str(Path.cwd() / "candidate-output"),
         }
     )
@@ -88,7 +92,7 @@ def run_ai_hedge_fund(root: Path) -> dict[str, Any]:
         portfolio=portfolio,
         show_reasoning=False,
         selected_analysts=["technical_analyst", "fundamentals_analyst", "valuation_analyst"],
-        model_name="gemini-3-flash-preview",
+        model_name=MODEL,
         model_provider="Google",
     )
     return {
@@ -136,22 +140,57 @@ RUNNERS = {
 }
 
 
+def smoke_candidate(candidate: str, root: Path) -> dict[str, Any]:
+    """Import the integration boundary without constructing clients or calling an LLM."""
+    sys.path.insert(0, str(root))
+    if candidate == "tradingagents":
+        from tradingagents.default_config import DEFAULT_CONFIG
+        from tradingagents.graph.trading_graph import TradingAgentsGraph
+
+        return {
+            "imports": ["tradingagents.default_config", "tradingagents.graph.trading_graph"],
+            "entrypoint": TradingAgentsGraph.__name__,
+            "configured_provider": DEFAULT_CONFIG.get("llm_provider"),
+        }
+    if candidate == "ai-hedge-fund":
+        from hedge_fund.pipeline import run_cycle
+
+        return {
+            "imports": ["hedge_fund.pipeline"],
+            "entrypoint": run_cycle.__name__,
+            "note": "The upstream v2 package replaced the legacy src.main.run_hedge_fund API; the paid adapter must be migrated.",
+        }
+    from src.agent.factory import build_agent_executor
+    from src.config import get_config
+
+    return {
+        "imports": ["src.agent.factory", "src.config"],
+        "entrypoint": build_agent_executor.__name__,
+        "config_loader": get_config.__name__,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("candidate", choices=sorted(RUNNERS))
     parser.add_argument("candidate_root", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--mode", choices=("smoke", "evaluate"), default="smoke")
     args = parser.parse_args()
 
     started = time.monotonic()
     payload: dict[str, Any] = {
         "candidate": args.candidate,
         "status": "failed",
-        "model": "gemini-3-flash-preview",
+        "model": MODEL,
         "date": str(date.today()),
+        "mode": args.mode,
     }
     try:
-        payload.update(RUNNERS[args.candidate](args.candidate_root.resolve()))
+        if args.mode == "smoke":
+            payload.update(smoke_candidate(args.candidate, args.candidate_root.resolve()))
+        else:
+            payload.update(RUNNERS[args.candidate](args.candidate_root.resolve()))
         payload["status"] = "completed"
     except Exception as exc:  # Preserve failures as comparable bake-off evidence.
         payload["error"] = f"{type(exc).__name__}: {exc}"

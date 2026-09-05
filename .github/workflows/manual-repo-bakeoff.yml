@@ -2,6 +2,15 @@ name: Manual finance repository bake-off
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Smoke-test updated integrations without LLM calls, or run the paid AAPL case"
+        required: true
+        default: smoke
+        type: choice
+        options:
+          - smoke
+          - evaluate
 
 permissions:
   contents: read
@@ -17,15 +26,15 @@ jobs:
         include:
           - name: tradingagents
             repository: circuitstudioai/TradingAgents
-            ref: fa4d01c23acef4882fd74dd5be75dd3c7a4bc5f7
+            ref: 9dee508c44662702281a8dbaad1f7b42179b5ba7
             install: python -m pip install -e candidate
           - name: ai-hedge-fund
             repository: circuitstudioai/ai-hedge-fund
-            ref: 0f6ac487986f7eb80749ed42bd26fb8330c450db
+            ref: fc1bf250ead209ae5f02c39c3d0062c4bb554505
             install: python -m pip install -e candidate
           - name: daily-stock-analysis
             repository: circuitstudioai/daily_stock_analysis
-            ref: efd2bce694b3ca8cbd168af7b511839ecd3219b2
+            ref: 303f4e1c18b7e149bc2b7618eb63a6574507bc6b
             install: python -m pip install -r candidate/requirements.txt
 
     steps:
@@ -46,19 +55,21 @@ jobs:
       - name: Install candidate
         run: ${{ matrix.install }}
 
-      - name: Run one-case manual bake-off
+      - name: Run candidate smoke test or one-case bake-off
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          LITELLM_MODEL: gemini/gemini-3-flash-preview
-          AGENT_LITELLM_MODEL: gemini/gemini-3-flash-preview
+          LITELLM_MODEL: gemini/gemini-3.5-flash
+          AGENT_LITELLM_MODEL: gemini/gemini-3.5-flash
           REPORT_LANGUAGE: en
           AGENT_MODE: "true"
           AGENT_ARCH: single
-          AGENT_MAX_STEPS: "5"
+          AGENT_MAX_STEPS: "3"
           ENABLE_WEB_SEARCH: "false"
           MARKET_REVIEW_ENABLED: "false"
-        run: python scripts/bakeoff/run_candidate.py "${{ matrix.name }}" candidate "artifacts/${{ matrix.name }}.json"
+          TRADINGAGENTS_MAX_TOKENS: "2048"
+          TRADINGAGENTS_LLM_MAX_RETRIES: "0"
+        run: python scripts/bakeoff/run_candidate.py "${{ matrix.name }}" candidate "artifacts/${{ matrix.name }}.json" --mode "${{ inputs.mode }}"
 
       - name: Upload candidate evidence
         if: always()
