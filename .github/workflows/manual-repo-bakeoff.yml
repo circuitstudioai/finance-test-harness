@@ -17,15 +17,15 @@ jobs:
         include:
           - name: tradingagents
             repository: circuitstudioai/TradingAgents
-            ref: fa4d01c
+            ref: fa4d01c23acef4882fd74dd5be75dd3c7a4bc5f7
             install: python -m pip install -e candidate
           - name: ai-hedge-fund
             repository: circuitstudioai/ai-hedge-fund
-            ref: 0f6ac48
+            ref: 0f6ac487986f7eb80749ed42bd26fb8330c450db
             install: python -m pip install -e candidate
           - name: daily-stock-analysis
             repository: circuitstudioai/daily_stock_analysis
-            ref: efd2bce
+            ref: efd2bce694b3ca8cbd168af7b511839ecd3219b2
             install: python -m pip install -r candidate/requirements.txt
 
     steps:
