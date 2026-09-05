@@ -62,7 +62,7 @@ def install_litellm_guard(max_calls: int = 3) -> dict[str, int]:
     return state
 
 
-def install_langchain_google_guard(max_calls: int = 10) -> dict[str, int]:
+def install_langchain_google_guard(max_calls: int = 14) -> dict[str, int]:
     """Bound direct LangChain Gemini requests used by the other candidates."""
     from langchain_google_genai import ChatGoogleGenerativeAI
 
@@ -135,7 +135,7 @@ def run_tradingagents(root: Path) -> dict[str, Any]:
         "usage": {
             "reported": False,
             "provider_calls": budget["calls"],
-            "ceilings": {"max_calls": 10, "max_prompt_chars_per_call": MAX_PROMPT_CHARS, "max_output_tokens_per_call": MAX_OUTPUT_TOKENS},
+            "ceilings": {"max_calls": 14, "max_prompt_chars_per_call": MAX_PROMPT_CHARS, "max_output_tokens_per_call": MAX_OUTPUT_TOKENS},
         },
     }
 
@@ -143,10 +143,16 @@ def run_tradingagents(root: Path) -> dict[str, Any]:
 def run_ai_hedge_fund(root: Path) -> dict[str, Any]:
     sys.path.insert(0, str(root))
     import requests
+    import hedge_fund.llm.client as hedge_fund_llm
     from hedge_fund.brokers import SimBroker
     from hedge_fund.data.models import CompanyFacts, Price
     from hedge_fund.fund import Fund, FundSpec
     from hedge_fund.pipeline import run_cycle
+
+    # The v2 registry lags the provider's current model catalog and otherwise
+    # treats an unknown Gemini id as Anthropic. Keep routing explicit in the
+    # harness rather than changing the candidate checkout.
+    hedge_fund_llm.provider_for = lambda _: "Google"
 
     class YahooPriceOnlyClient:
         """Keyless live-price adapter; unsupported fundamentals stay explicitly absent."""
@@ -202,7 +208,7 @@ def run_ai_hedge_fund(root: Path) -> dict[str, Any]:
 
 def run_daily_stock_analysis(root: Path) -> dict[str, Any]:
     sys.path.insert(0, str(root))
-    budget = install_litellm_guard()
+    budget = install_litellm_guard(max_calls=4)
     from src.agent.factory import build_agent_executor
     from src.config import get_config
 
@@ -226,7 +232,7 @@ def run_daily_stock_analysis(root: Path) -> dict[str, Any]:
             "model": result.model,
             "provider_calls": budget["calls"],
             "ceilings": {
-                "max_calls": 3,
+                "max_calls": 4,
                 "max_prompt_chars_per_call": MAX_PROMPT_CHARS,
                 "max_output_tokens_per_call": MAX_OUTPUT_TOKENS,
             },
