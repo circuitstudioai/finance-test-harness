@@ -12,6 +12,12 @@ Engines should validate packets before emitting them and abstain when required
 evidence is unavailable. A stable v1 example lives at
 `tests/fixtures/evidence_packet_v1.json`.
 
+`SecClient` in `src/harness/sec_fundamentals.py` retrieves primary-source SEC
+Company Facts with the SEC-required identifying user agent. The deterministic
+valuation helpers in `src/harness/valuation.py` expose every assumption, formula,
+and input. `validate_claims` prevents factual or calculated claims from reaching
+the presentation layer without corresponding packet evidence.
+
 ## What it does
 - Pulls daily OHLC data from Yahoo Finance (no API key required)
 - Runs strategy adapters (baseline, true CSV adapters, and a no-key PEAD strategy)
