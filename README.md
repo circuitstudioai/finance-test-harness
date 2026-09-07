@@ -2,6 +2,16 @@
 
 Lightweight test harness to evaluate trading ideas before risking capital.
 
+## Evidence contract
+
+Finance engines exchange evidence through the versioned `EvidencePacket` contract
+in `src/harness/evidence.py`. Each fact records its ticker, period, units, source,
+retrieval/publication timestamps, confidence, freshness, and missing-data state.
+Calculated values additionally carry the method, formula, and complete inputs.
+Engines should validate packets before emitting them and abstain when required
+evidence is unavailable. A stable v1 example lives at
+`tests/fixtures/evidence_packet_v1.json`.
+
 ## What it does
 - Pulls daily OHLC data from Yahoo Finance (no API key required)
 - Runs strategy adapters (baseline, true CSV adapters, and a no-key PEAD strategy)
