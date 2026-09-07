@@ -18,6 +18,11 @@ valuation helpers in `src/harness/valuation.py` expose every assumption, formula
 and input. `validate_claims` prevents factual or calculated claims from reaching
 the presentation layer without corresponding packet evidence.
 
+The stable Market Desk boundary is `src/harness/engine_adapters.py`. It exposes
+three deliberately different engines—technical regime, fundamentals/valuation,
+and evidence-constrained AI research—and normalizes each into the existing
+Market Desk ingest shape. The AI adapter refuses uncited factual claims.
+
 ## What it does
 - Pulls daily OHLC data from Yahoo Finance (no API key required)
 - Runs strategy adapters (baseline, true CSV adapters, and a no-key PEAD strategy)
