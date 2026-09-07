@@ -11,7 +11,8 @@ class EngineAdapterTests(unittest.TestCase):
         output = technical_engine(7, "aapl", range(100, 221), "2026-09-07T00:00:00Z")
         self.assertEqual(output.direction, "bullish")
         self.assertEqual(output.engine_name, "technical_regime")
-        self.assertEqual(output.to_dict()["raw_payload"]["schema_version"], "1.0.0")
+        self.assertEqual(output.to_dict()["raw_payload"]["evidence_packet"]["schema_version"], "1.0.0")
+        self.assertEqual(output.raw_payload["category_views"]["trend"]["direction"], "bullish")
 
     def test_fundamentals_engine_uses_scenario_range(self):
         packet = EvidencePacket("AAPL", "2026-09-07T00:00:00Z", (), "sec_fundamentals")
@@ -21,6 +22,7 @@ class EngineAdapterTests(unittest.TestCase):
         output = fundamentals_engine(7, packet, valuations, 20)
         self.assertEqual(output.direction, "bullish")
         self.assertEqual(output.engine_name, "fundamentals_valuation")
+        self.assertEqual(output.raw_payload["category_views"]["valuation"]["direction"], "bullish")
 
     def test_ai_research_rejects_uncited_fact(self):
         packet = EvidencePacket("AAPL", "2026-09-07T00:00:00Z", (), "research")

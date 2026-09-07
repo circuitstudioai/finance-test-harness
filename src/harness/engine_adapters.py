@@ -71,7 +71,11 @@ def technical_engine(
         f"Trend score {score}/3; 20-day momentum {momentum20:.1%}.",
         ("Price above short trend",) if prices[-1] > ma20 else (),
         ("Price below short trend",) if prices[-1] <= ma20 else (),
-        (f"Annualized 20-day volatility {volatility:.1%}",), (), "Monitor trend and momentum confirmation.", packet.to_dict())
+        (f"Annualized 20-day volatility {volatility:.1%}",), (), "Monitor trend and momentum confirmation.",
+        {"evidence_packet": packet.to_dict(), "category_views": {
+            "trend": {"direction": direction, "confidence": int(confidence)},
+            "risk": {"direction": "bearish" if volatility >= .4 else "neutral", "confidence": min(90, int(50 + volatility * 50))},
+        }})
 
 
 def fundamentals_engine(
@@ -92,7 +96,11 @@ def fundamentals_engine(
         f"Scenario range {values[0]:.2f}–{values[-1]:.2f} versus current price {current_price:.2f}." if values else "Insufficient valuation evidence.",
         ("Current price is below the base scenario",) if direction == "bullish" else (),
         ("Current price is above the base scenario",) if direction == "bearish" else (),
-        tuple(f"Missing SEC metric: {metric}" for metric in missing), (), "Review assumptions and refresh after the next filing.", combined.to_dict())
+        tuple(f"Missing SEC metric: {metric}" for metric in missing), (), "Review assumptions and refresh after the next filing.",
+        {"evidence_packet": combined.to_dict(), "category_views": {
+            "valuation": {"direction": direction, "confidence": confidence},
+            "fundamentals": {"direction": "neutral", "confidence": max(20, 80 - len(missing) * 10)},
+        }})
 
 
 def ai_research_engine(
@@ -103,15 +111,24 @@ def ai_research_engine(
     view: str,
     confidence: int,
     thesis: str,
+    category_views: dict[str, dict[str, Any]] | None = None,
 ) -> EngineOutput:
     errors = validate_claims(packet, claims)
     if errors:
         raise ValueError("unsupported research output: " + "; ".join(errors))
     if view not in {"bullish", "neutral", "bearish"} or not 0 <= confidence <= 100:
         raise ValueError("invalid view or confidence")
+    category_views = category_views or {"research": {"direction": view, "confidence": confidence}}
+    for category, category_view in category_views.items():
+        if not category or category_view.get("direction") not in {"bullish", "neutral", "bearish"}:
+            raise ValueError("invalid category view")
+        category_confidence = category_view.get("confidence")
+        if not isinstance(category_confidence, (int, float)) or not 0 <= category_confidence <= 100:
+            raise ValueError("invalid category confidence")
     cited = {evidence_id for claim in claims for evidence_id in claim.evidence_ids}
     return EngineOutput(run_id, packet.ticker, "US", packet.as_of, "ai_research", view, confidence, "long_term", thesis,
         tuple(claim.text for claim in claims if claim.kind is EvidenceKind.INTERPRETATION and "bull" in claim.text.lower()),
         tuple(claim.text for claim in claims if claim.kind is EvidenceKind.INTERPRETATION and "bear" in claim.text.lower()),
         (), (), "Investigate disagreements and thesis invalidators.",
-        {"evidence_packet": packet.to_dict(), "claims": [asdict(claim) for claim in claims], "cited_evidence_ids": sorted(cited)})
+        {"evidence_packet": packet.to_dict(), "claims": [asdict(claim) for claim in claims], "cited_evidence_ids": sorted(cited),
+         "category_views": category_views})
