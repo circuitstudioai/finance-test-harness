@@ -23,6 +23,11 @@ three deliberately different engines—technical regime, fundamentals/valuation,
 and evidence-constrained AI research—and normalizes each into the existing
 Market Desk ingest shape. The AI adapter refuses uncited factual claims.
 
+`config/promotion_gate.yaml` freezes the five benchmark questions, 20-symbol
+evaluation universe, required engines, and request budgets. The deterministic
+gate in `src/harness/promotion_gate.py` rejects incomplete engine coverage,
+failed benchmarks, invalid output contracts, or over-budget runs.
+
 ## What it does
 - Pulls daily OHLC data from Yahoo Finance (no API key required)
 - Runs strategy adapters (baseline, true CSV adapters, and a no-key PEAD strategy)
