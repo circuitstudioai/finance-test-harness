@@ -28,6 +28,11 @@ evaluation universe, required engines, and request budgets. The deterministic
 gate in `src/harness/promotion_gate.py` rejects incomplete engine coverage,
 failed benchmarks, invalid output contracts, or over-budget runs.
 
+To freeze and evaluate a real persisted Market Desk run, provide current Supabase
+service credentials and run `python scripts/validate_market_desk_run.py --run-id
+RUN_ID --output results/promotion/market_desk_run_RUN_ID.json`. The artifact retains
+the engine packets, benchmark checks, usage/cost estimate, daily brief, and gate result.
+
 ## What it does
 - Pulls daily OHLC data from Yahoo Finance (no API key required)
 - Runs strategy adapters (baseline, true CSV adapters, and a no-key PEAD strategy)
