@@ -7,10 +7,13 @@ import argparse
 import json
 import os
 from pathlib import Path
+import sys
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.harness.promotion_gate import evaluate_artifact
 
